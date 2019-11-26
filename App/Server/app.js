@@ -3,6 +3,10 @@ var express = require('express');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser')
 var logger = require('morgan');
+var mongoose = require('mongoose');
+
+//ENV
+require('dotenv').config()
 
 //GraphQL
 var graphqlHTTP = require('express-graphql');
@@ -11,9 +15,12 @@ var { buildSchema } = require('graphql');
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
 
+//Models
+const Event = require('./models/event');
 var app = express();
 
-const events=[]
+
+
 
 
 app.use(logger('dev'));
@@ -55,22 +62,37 @@ schema {
 `)
 
 var rootValue = {
-  events:()=>{
-    return events;
+  events: () => {
+    return Event.find()
+      .then(events => {
+        return events.map(event => {
+          return { ...event._doc, _id: event.id };
+        });
+      })
+      .catch(err => {
+        throw err;
+      });
   },
   createEvent: (args) => {
-    const event = {
+    const event = new Event ({
       _id: Math.random().toString(),
       title: args.eventInput.title,
       description: args.eventInput.description,
       price: + args.eventInput.price,
-      date: args.eventInput.date
-    };
-    events.push(event);
-    return event;
+      date: new Date(args.eventInput.date)
+    });
+    return event
+      .save()
+      .then(result => {
+        console.log(result);
+        return { ...result._doc, _id: result._doc._id.toString() };
+      })
+      .catch(err => {
+        console.log(err);
+        throw err;
+      });
   }
 }
-
 
 app.use('/graphql', graphqlHTTP({
   schema: schema,
@@ -79,25 +101,27 @@ app.use('/graphql', graphqlHTTP({
 }));
 
 
-
-
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
 
-// catch 404 and forward to error handler
+
 app.use(function(req, res, next) {
   next(createError(404));
 });
 
-// error handler
+
 app.use(function(err, req, res, next) {
-  // set locals, only providing error in development
   res.locals.message = err.message;
   res.locals.error = req.app.get('env') === 'development' ? err : {};
 
-  // render the error page
   res.status(err.status || 500);
   res.render('error');
+});
+
+//Connect DATABASE
+mongoose.connect(process.env.DATABASE_HOST,{useNewUrlParser: true},function(err,data){
+  if(err)throw err;
+  console.log("Database connect")
 });
 
 module.exports = app;
