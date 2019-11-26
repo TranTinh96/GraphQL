@@ -17,10 +17,8 @@ var usersRouter = require('./routes/users');
 
 //Models
 const Event = require('./models/event');
+
 var app = express();
-
-
-
 
 
 app.use(logger('dev'));
@@ -75,7 +73,6 @@ var rootValue = {
   },
   createEvent: (args) => {
     const event = new Event ({
-      _id: Math.random().toString(),
       title: args.eventInput.title,
       description: args.eventInput.description,
       price: + args.eventInput.price,
@@ -84,8 +81,7 @@ var rootValue = {
     return event
       .save()
       .then(result => {
-        console.log(result);
-        return { ...result._doc, _id: result._doc._id.toString() };
+          return { ...result._doc, _id: result._doc._id.toString() };
       })
       .catch(err => {
         console.log(err);
@@ -119,7 +115,7 @@ app.use(function(err, req, res, next) {
 });
 
 //Connect DATABASE
-mongoose.connect(process.env.DATABASE_HOST,{useNewUrlParser: true},function(err,data){
+mongoose.connect(process.env.DATABASE_HOST,function(err,data){
   if(err)throw err;
   console.log("Database connect")
 });
