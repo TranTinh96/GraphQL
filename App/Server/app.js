@@ -25,51 +25,56 @@ app.use(bodyParser.json())
 //GraphQL
 
 var schema = buildSchema(`
-  type Event {
-    _id : ID!
-    title : String!
-    description : String!
-    price : Float!
-    date : String!
-  }
-  input EventInput {
-      title : String!
-      description : String!
-      price : Float!
-      date : String!
-
-  }
-  
-  type RootQuery { 
-    events : [Event!]!
-
+type Event {
+    _id: ID!
+    title: String!
+    description: String!
+    price: Float!
+    date: String!
   }
 
-  type RootMutation {
-    createEvent(eventInput: EventInput):Event
-  }
-  schema {
-    query:  RootQuery
-    mutation :RootMutation
+input EventInput {
+    title: String!
+    description: String!
+    price: Float!
+    date: String!
   }
 
-`);
+type RootQuery {
+    events: [Event!]!
+  }
 
-var root = {
+type RootMutation {
+    createEvent(eventInput: EventInput): Event
+  }
+
+schema {
+    query: RootQuery
+    mutation: RootMutation
+  }
+`)
+
+var rootValue = {
   events:()=>{
-    return [" Romatic Cooking","Sailing", " All-Night Coding"];
+    return events;
   },
-  createEvent:(args)=>{
-      const event ={
-         _id: Math.random().toString()
-      }
-    }
+  createEvent: (args) => {
+    const event = {
+      _id: Math.random().toString(),
+      title: args.eventInput.title,
+      description: args.eventInput.description,
+      price: + args.eventInput.price,
+      date: args.eventInput.date
+    };
+    events.push(event);
+    return event;
+  }
 }
 
 
 app.use('/graphql', graphqlHTTP({
   schema: schema,
-  rootValue: root,
+  rootValue: rootValue,
   graphiql: true,
 }));
 

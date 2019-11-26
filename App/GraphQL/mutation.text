@@ -1,0 +1,11 @@
+mutation{
+  createEvent(eventInput: {
+    title: "first",
+    description: "test",
+    price: 9.99,
+    date: "2019-01-04T03:42:44.588Z"
+  }){
+    title
+    price
+  }
+}
