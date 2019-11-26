@@ -1,0 +1,8 @@
+mutation {
+  createEvent(eventInput:{
+    title : "Tran Tinh",
+    description :"I Love You My Hiep",
+    price :20,
+    date : "2019-11-26T14:04:50.909Z",
+  })
+}
