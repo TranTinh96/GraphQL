@@ -17,6 +17,7 @@ var usersRouter = require('./routes/users');
 
 //Models
 const Event = require('./models/event');
+const User = require('./models/user');
 
 var app = express();
 
@@ -30,34 +31,48 @@ app.use(bodyParser.json())
 //GraphQL
 
 var schema = buildSchema(`
-type Event {
-    _id: ID!
-    title: String!
-    description: String!
-    price: Float!
-    date: String!
-  }
+  type Event {
+      _id: ID!
+      title: String!
+      description: String!
+      price: Float!
+      date: String!
+    }
+  type User {
+      _id: ID!
+      email: String!
+      password: String
+    }
 
-input EventInput {
-    title: String!
-    description: String!
-    price: Float!
-    date: String!
-  }
 
-type RootQuery {
-    events: [Event!]!
-  }
 
-type RootMutation {
-    createEvent(eventInput: EventInput): Event
-  }
+  input EventInput {
+      title: String!
+      description: String!
+      price: Float!
+      date: String!
+    }
+  input UserInput {
+      email: String!
+      password: String!
+    }
 
-schema {
-    query: RootQuery
-    mutation: RootMutation
-  }
-`)
+
+
+  type RootQuery {
+      events: [Event!]!
+    }
+
+  type RootMutation {
+      createEvent(eventInput: EventInput): Event
+      createUser(userInput: UserInput): User
+    }
+
+  schema {
+      query: RootQuery
+      mutation: RootMutation
+    }
+  `)
 
 var rootValue = {
   events: () => {
