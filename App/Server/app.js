@@ -88,16 +88,30 @@ var rootValue = {
       });
   },
   createEvent: args => {
+    let createdEvent;
+
     const event = new Event({
       title: args.eventInput.title,
       description: args.eventInput.description,
       price: +args.eventInput.price,
-      date: new Date(args.eventInput.date)
+      date: new Date(args.eventInput.date),
+      creator: "5dddcfe11c7e0830b45a658d"
     });
     return event
       .save()
       .then(result => {
-        return { ...result._doc, _id: result._doc._id.toString() };
+        createdEvent = { ...result._doc, _id: result._doc._id.toString() };
+        return User.findById("5dddcfe11c7e0830b45a658d");
+      })
+      .then(user => {
+        if (!user) {
+          throw new Error("User not found.");
+        }
+        user.createdEvents.push(event);
+        return user.save();
+      })
+      .then(result => {
+        return createdEvent;
       })
       .catch(err => {
         console.log(err);
