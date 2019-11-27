@@ -1,25 +1,24 @@
-var createError = require('http-errors');
-var express = require('express');
-var cookieParser = require('cookie-parser');
-var bodyParser = require('body-parser')
-var logger = require('morgan');
-var mongoose = require('mongoose');
-
+const express = require('express');
+const cookieParser = require('cookie-parser');
+const bodyParser = require('body-parser')
+const logger = require('morgan');
+const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
 //ENV
 require('dotenv').config()
 
 //GraphQL
-var graphqlHTTP = require('express-graphql');
-var { buildSchema } = require('graphql');
+const graphqlHTTP = require('express-graphql');
+const { buildSchema } = require('graphql');
 
-var indexRouter = require('./routes/index');
-var usersRouter = require('./routes/users');
+const indexRouter = require('./routes/index');
+const usersRouter = require('./routes/users');
 
 //Models
 const Event = require('./models/event');
 const User = require('./models/user');
 
-var app = express();
+const app = express();
 
 
 app.use(logger('dev'));
@@ -68,6 +67,8 @@ var schema = buildSchema(`
       createUser(userInput: UserInput): User
     }
 
+
+
   schema {
       query: RootQuery
       mutation: RootMutation
@@ -86,24 +87,46 @@ var rootValue = {
         throw err;
       });
   },
-  createEvent: (args) => {
-    const event = new Event ({
+  createEvent: args => {
+    const event = new Event({
       title: args.eventInput.title,
       description: args.eventInput.description,
-      price: + args.eventInput.price,
+      price: +args.eventInput.price,
       date: new Date(args.eventInput.date)
     });
     return event
       .save()
       .then(result => {
-          return { ...result._doc, _id: result._doc._id.toString() };
+        return { ...result._doc, _id: result._doc._id.toString() };
       })
       .catch(err => {
         console.log(err);
         throw err;
       });
+  },
+  createUser: args => {
+    return User.findOne({ email: args.userInput.email })
+      .then(user => {
+        if (user) {
+          throw new Error("User exists already.");
+        }
+        return bcrypt.hash(args.userInput.password, 12);
+      })
+      .then(hashedPassword => {
+        const user = new User({
+          email: args.userInput.email,
+          password: hashedPassword
+        });
+        return user.save();
+      })
+      .then(result => {
+        return { ...result._doc, password: null, _id: result.id };
+      })
+      .catch(err => {
+        throw err;
+      });
   }
-}
+};
 
 app.use('/graphql', graphqlHTTP({
   schema: schema,
@@ -115,19 +138,6 @@ app.use('/graphql', graphqlHTTP({
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
 
-
-app.use(function(req, res, next) {
-  next(createError(404));
-});
-
-
-app.use(function(err, req, res, next) {
-  res.locals.message = err.message;
-  res.locals.error = req.app.get('env') === 'development' ? err : {};
-
-  res.status(err.status || 500);
-  res.render('error');
-});
 
 //Connect DATABASE
 mongoose.connect(process.env.DATABASE_HOST,function(err,data){
